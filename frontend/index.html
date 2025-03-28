@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能视频监控预警系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 全局样式优化 */
+        :root {
+            --primary-color: #3a4a5e;
+            --secondary-color: #4285f4;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        /* 模态框容器改进 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto; /* 允许整个模态窗口区域滚动 */
+        }
+
+        /* 模态内容改进 */
+        .modal-content {
+            background-color: white;
+            margin: 30px auto;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: slide-down 0.3s ease;
+            max-height: calc(100vh - 60px); /* 限制最大高度为视口高度减去边距 */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 模态内容主体部分 */
+        .modal-body {
+            padding: 15px;
+            overflow-y: auto; /* 只让主体部分滚动 */
+            max-height: calc(80vh - 120px); /* 限制模态框主体的高度 */
+        }
+
+        /* 模态头部保持固定 */
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), #34495e);
+            color: white;
+            padding: 15px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky; /* 使头部保持固定 */
+            top: 0;
+            z-index: 10;
+        }
+
+        /* 确保表单操作按钮总是可见 */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            position: sticky; /* 使按钮区域保持固定 */
+            bottom: 0;
+            z-index: 10;
+        }
+        
+        /* 卡片阴影和圆角增强 */
+        .card {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        /* 导航栏样式优化 */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), #2c3e50);
+            padding: 15px 0;
+        }
+        
+        .logo h1 {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 按钮样式优化 */
+        .btn {
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+            padding: 8px 16px;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3367d6;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background-color: var(--accent-color);
+            border: none;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+        
+        /* AI服务模式选择器样式 */
+        .ai-service-section {
+            background-color: rgba(66, 133, 244, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .ai-service-section h3 {
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        /* 切换开关样式 */
+        .switch-field {
+            display: flex;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .switch-field input {
+            position: absolute !important;
+            clip: rect(0, 0, 0, 0);
+            height: 1px;
+            width: 1px;
+            border: 0;
+            overflow: hidden;
+        }
+        
+        .switch-field label {
+            flex: 1;
+            background-color: #f8f9fa;
+            color: #495057;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px 16px;
+            margin: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .switch-field label:hover {
+            background-color: #e9ecef;
+        }
+        
+        .switch-field input:checked + label {
+            background-color: var(--secondary-color);
+            color: white;
+            box-shadow: none;
+        }
+        
+        .switch-field label:first-of-type {
+            border-radius: 6px 0 0 6px;
+        }
+        
+        .switch-field label:last-of-type {
+            border-radius: 0 6px 6px 0;
+        }
+        
+        /* 连接状态样式 */
+        .connection-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        /* 提示文本样式 */
+        .hint-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 6px;
+        }
+        
+        /* 模型设置面板 */
+        .model-settings {
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 1px solid #e9ecef;
+            display: none;
+        }
+        
+        .model-settings label {
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        
+        /* 表单控件美化 */
+        .form-control {
+            border-radius: 6px;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.25);
+        }
+        
+        /* 动画效果 */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(66, 133, 244, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); }
+        }
+        
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        .mt-4 {
+            margin-top: 1.5rem;
+        }
+        
+        .service-group {
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 1rem;
+        }
+        
+        .service-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶部导航 -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-video"></i>
+                <h1>智能视频监控预警系统</h1>
+            </div>
+            <div class="navbar-actions">
+                <div class="connection-status">
+                    <div class="status-indicator" id="connectionStatus"></div>
+                    <span id="connectionText">未连接</span>
+                </div>
+                <button id="settingsBtn" class="btn btn-secondary">
+                    <i class="fas fa-cog"></i> 设置
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <div class="container main-content">
+        <div class="content-left">
+            <!-- 视频监控卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span>实时监控</span>
+                    <div class="control-buttons">
+                        <button class="btn btn-primary" id="connectBtn">
+                            <i class="fas fa-plug"></i> 连接监控
+                        </button>
+                        <button class="btn btn-danger" id="disconnectBtn" disabled>
+                            <i class="fas fa-stop-circle"></i> 断开连接
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="video-container">
+                        <img id="videoFeed" class="video-feed" src="/static/assets/placeholder.jpg" alt="监控画面">
+                        <div class="video-status" id="videoStatus">
+                            <i class="fas fa-circle"></i> 未连接
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 预警详情卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span>预警详情</span>
+                    <span class="badge" id="alertTime"></span>
+                </div>
+                <div class="card-body">
+                    <div id="alertDetail" class="alert-detail">
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>选择一条预警消息查看详情</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-right">
+            <!-- 监控统计卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span>监控统计</span>
+                </div>
+                <div class="card-body">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalAlerts">0</div>
+                            <div class="stat-label">总预警数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="monitorTime">00:00</div>
+                            <div class="stat-label">监控时长</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="todayAlerts">0</div>
+                            <div class="stat-label">今日预警</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="currentStatus">离线</div>
+                            <div class="stat-label">当前状态</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <h3>预警类型分布</h3>
+                        <div class="chart-container" id="alertTypeChart">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 预警列表卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <span>预警消息</span>
+                    <span class="badge" id="alertCount">0</span>
+                </div>
+                <div class="card-body">
+                    <div id="alertsList" class="alerts-list">
+                        <div class="empty-state">
+                            <i class="fas fa-check-circle"></i>
+                            <p>暂无预警消息</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置面板模态框 -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>系统设置</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label for="videoSource">视频源:</label>
+                        <div class="input-group">
+                            <input type="text" id="videoSource" name="video_source" class="form-control" placeholder="输入视频路径或RTSP URL">
+                            <button type="button" id="browseBtn" class="btn btn-secondary">浏览</button>
+                        </div>
+                        <small>选择本地视频文件或输入RTSP流地址</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="videoSelect">选择系统视频:</label>
+                        <select id="videoSelect" class="form-control">
+                            <option value="">--请选择视频--</option>
+                        </select>
+                    </div>
+                    
+                    <!-- AI服务模式设置区 -->
+                    <div class="ai-service-section">
+                        <h3><i class="fas fa-brain"></i> AI服务配置</h3>
+                        
+                        <!-- 通义千问服务设置 (视频分析) -->
+                        <div class="service-group">
+                            <label><i class="fas fa-video"></i> 视频分析服务 (通义千问):</label>
+                            <div class="switch-field">
+                                <input type="radio" id="qwen-api-mode" name="qwen_mode" value="api" checked>
+                                <label for="qwen-api-mode">远程API</label>
+                                <input type="radio" id="qwen-ollama-mode" name="qwen_mode" value="ollama">
+                                <label for="qwen-ollama-mode">本地Ollama</label>
+                            </div>
+                            
+                            <div id="qwen-api-settings" class="model-settings">
+                                <div class="form-group">
+                                    <label for="qwen-api-key">通义千问API密钥:</label>
+                                    <input type="password" id="qwen-api-key" name="qwen_api_key" class="form-control" placeholder="输入API密钥">
+                                </div>
+                                <div class="form-group">
+                                    <label for="qwen-model">通义千问模型:</label>
+                                    <input type="text" id="qwen-model" name="qwen_model" class="form-control" placeholder="例如: qwen-vl-max">
+                                </div>
+                            </div>
+                            
+                            <div id="qwen-ollama-settings" class="model-settings" style="display: none;">
+                                <div class="form-group">
+                                    <label for="ollama-qwen-model">Ollama模型 (视频分析):</label>
+                                    <input type="text" id="ollama-qwen-model" name="ollama_qwen_model" class="form-control" placeholder="例如: llama3">
+                                </div>
+                                <button type="button" id="test-qwen-ollama" class="btn btn-secondary mt-2">测试Ollama连接</button>
+                                <div id="qwen-connection-status" class="connection-status"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Moonshot服务设置 (文本分析) -->
+                        <div class="service-group mt-4">
+                            <label><i class="fas fa-file-alt"></i> 文本分析服务 (Moonshot):</label>
+                            <div class="switch-field">
+                                <input type="radio" id="moonshot-api-mode" name="moonshot_mode" value="api" checked>
+                                <label for="moonshot-api-mode">远程API</label>
+                                <input type="radio" id="moonshot-ollama-mode" name="moonshot_mode" value="ollama">
+                                <label for="moonshot-ollama-mode">本地Ollama</label>
+                            </div>
+                            
+                            <div id="moonshot-api-settings" class="model-settings">
+                                <div class="form-group">
+                                    <label for="moonshot-api-key">Moonshot API密钥:</label>
+                                    <input type="password" id="moonshot-api-key" name="moonshot_api_key" class="form-control" placeholder="输入API密钥">
+                                </div>
+                                <div class="form-group">
+                                    <label for="moonshot-model">Moonshot模型:</label>
+                                    <input type="text" id="moonshot-model" name="moonshot_model" class="form-control" placeholder="例如: moonshot-v1-8k">
+                                </div>
+                            </div>
+                            
+                            <div id="moonshot-ollama-settings" class="model-settings" style="display: none;">
+                                <div class="form-group">
+                                    <label for="ollama-moonshot-model">Ollama模型 (文本分析):</label>
+                                    <input type="text" id="ollama-moonshot-model" name="ollama_moonshot_model" class="form-control" placeholder="例如: llama3">
+                                </div>
+                                <button type="button" id="test-moonshot-ollama" class="btn btn-secondary mt-2">测试Ollama连接</button>
+                                <div id="moonshot-connection-status" class="connection-status"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="analysisInterval">分析间隔 (秒):</label>
+                        <input type="number" id="analysisInterval" name="analysis_interval" class="form-control" min="1" max="60">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bufferDuration">缓冲区长度 (秒):</label>
+                        <input type="number" id="bufferDuration" name="buffer_duration" class="form-control" min="5" max="30">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="jpegQuality">JPEG质量 (1-100):</label>
+                        <input type="number" id="jpegQuality" name="jpeg_quality" class="form-control" min="1" max="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>上传视频文件:</label>
+                        <div class="file-upload">
+                            <input type="file" id="videoFile" accept=".mp4,.avi,.mkv,.mov">
+                            <button type="button" id="uploadBtn" class="btn btn-secondary">上传视频</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="form-actions">
+                <button type="submit" form="settingsForm" class="btn btn-primary">保存设置</button>
+                <button type="button" id="cancelBtn" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部信息 -->
+    <footer>
+        <div class="container">
+            <p>智能视频监控预警系统 &copy; 2025</p>
+        </div>
+    </footer>
+
+    <!-- 加载脚本 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+
+</html>

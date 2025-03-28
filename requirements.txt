@@ -1,0 +1,27 @@
+# 核心框架
+fastapi==0.103.1
+uvicorn==0.23.2
+python-dotenv==1.0.0
+
+# 异步和HTTP
+httpx==0.24.1
+websockets==11.0.3
+aiofiles==23.1.0
+
+# 数据处理
+pydantic==2.3.0
+numpy==1.24.4
+
+# 视频处理
+opencv-python-headless==4.8.0.76
+
+# 日志和工具
+loguru==0.7.0
+python-multipart==0.0.6
+
+# 部署工具
+gunicorn==21.2.0
+
+# 测试
+pytest==7.3.1
+pytest-asyncio==0.21.0
